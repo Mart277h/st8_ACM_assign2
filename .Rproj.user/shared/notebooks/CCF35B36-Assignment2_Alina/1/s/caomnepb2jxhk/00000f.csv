@@ -1,0 +1,3 @@
+"0","samples <- readRDS(""simmodels/W3_SimpleBernoulli.rds"")"
+"0",""
+"0","samples$summary() # summarize the model"
