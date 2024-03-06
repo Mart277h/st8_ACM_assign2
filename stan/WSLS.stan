@@ -32,7 +32,6 @@ transformed data{
       winhand[t]= 0;
       losshand[t]= 1;
     }
-
 }
 
 parameters {
@@ -51,6 +50,11 @@ model {
 generated quantities{
   real winprob_prior;
   real lossprob_prior;
+  int<lower=0, upper=trials> prior_preds;
+  int<lower=0, upper=trials> post_preds;
   
+  winprob_prior = inv_logit(normal_rng(0,1));
+  lossprob_prior = inv_logit(normal_rng(0,1));
+  prior_preds = binomial_rng(trials, inv_logit(1 + winprob_prior * winhand + lossprob_prior * losshand));
+  post_preds = binomial_rng(trials, inv_logit(1 + winprob * winhand + lossprob * losshand));
 }
-
