@@ -186,6 +186,13 @@ ggplot(draws_df,
   theme_classic()
 ```
 
+```{r}
+ggplot(draws_df) +
+  geom_histogram(aes(prior_preds), color = "darkblue", fill = "blue", alpha = 0.3) +
+  xlab("Predicted heads out of 120 trials") +
+  ylab("Posterior Density") +
+  theme_classic()
+```
 
 
 

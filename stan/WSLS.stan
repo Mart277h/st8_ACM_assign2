@@ -43,17 +43,22 @@ model {
   target += normal_lpdf(winprob| 0,1); //prior
   target += normal_lpdf(lossprob| 0,1); //prior
   
-  // model
+  // model. Our model predicts choices from the win probability 
+  // or loss probability weighted against which hand had a loss and which hand 
+  // had a win (0 = left, 1 = right)
   target += bernoulli_logit_lpmf(choices | 1 + winprob * winhand + lossprob * losshand);
 }
 
+// the generated quantities gives us the predictive prior checks
 generated quantities{
-  real winprob_prior;
+  real winprob_prior; //creating the prior parameters
   real lossprob_prior;
-  int<lower=0, upper=trials> prior_preds;
+  real winprob_posterior; 
+  real lossprob_posterior;
+  int<lower=0, upper=trials> prior_preds; // creating the prior predictd choices
   int<lower=0, upper=trials> post_preds;
   
-  winprob_prior = inv_logit(normal_rng(0,1));
+  winprob_prior = inv_logit(normal_rng(0,1)); // specifying the priors
   lossprob_prior = inv_logit(normal_rng(0,1));
   prior_preds = binomial_rng(trials, inv_logit(1 + winprob_prior * winhand + lossprob_prior * losshand));
   post_preds = binomial_rng(trials, inv_logit(1 + winprob * winhand + lossprob * losshand));
