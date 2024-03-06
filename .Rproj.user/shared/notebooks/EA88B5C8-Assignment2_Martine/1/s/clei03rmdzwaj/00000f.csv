@@ -1,0 +1,7 @@
+"0","ggplot(draws_df, "
+"0","       aes(.iteration,"
+"0","           lossprob, "
+"0","           group = .chain, "
+"0","           color = .chain)) +"
+"0","  geom_line() +"
+"0","  theme_classic()"
