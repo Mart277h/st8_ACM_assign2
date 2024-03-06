@@ -6,7 +6,15 @@ output: html_document
 ---
 
 ```{r Loading libraries}
-pacman::p_load(tidyverse, rstan)
+pacman::p_load(tidyverse,
+        here,
+        posterior,
+        cmdstanr,
+        brms, 
+        tidybayes,
+        future, 
+        purrr, 
+        furrr)
 ```
 
 Riccardos code: random agent to let the WSLS model play against 
@@ -79,7 +87,7 @@ for (t in 2:trials){
   } else {Feedback = 0}
   
   # register feedback
-  Feedbacklist[t] <- Feedback
+  Feedbacklist[t-1] <- Feedback
   
   # make decision
   Self[t] <- AsymWSLSAgent_f(Self[t-1], 
@@ -88,19 +96,32 @@ for (t in 2:trials){
                          0.7) #Loose probability
 }
 
+if (Self[120] == Random[120]){
+    Feedbacklist[120] = 1
+  } else {Feedbacklist[120] = 0}
+
 # turn into tibble
 WSLS_df <- tibble(Self,
              Random,
              trial = seq(trials),
-             Feedback_prevT = Feedbacklist)
+             feedback = Feedbacklist)
 
+```
+
+```{r}
+## Create the data. N.B. note the two variables have different lengths: 1 for n, n for h.
+data <- list(
+  trials = 120, # 'trials' in data section of stan model
+  choices = WSLS_df$Self, # 'choices' in data section of stan model
+  feedback = WSLS_df$feedback # 'feedback' in data section of stan model
+)
 ```
 
 ##Compiling model in stan 
 This part is not done, just copied from Riccardo so that we know how to compile and run the model. 
 ```{r}
 ## Specify where the model is
-file <- file.path("WSLS.stan")
+file <- file.path("stan/WSLS.stan")
 
 # Compile the model
 mod <- cmdstan_model(file, 
@@ -111,7 +132,7 @@ mod <- cmdstan_model(file,
 
 # The following command calls Stan with specific options.
 samples <- mod$sample(
-  data = WSLS_df, # the data :-)
+  data = data, # the data :-)
   seed = 123,  # a seed, so I always get the same results
   chains = 2,  # how many chains should I fit (to check whether they give the same results)
   parallel_chains = 2, # how many of the chains can be run in parallel?
@@ -125,7 +146,65 @@ samples <- mod$sample(
 )
 
 # Save the fitted model
-samples$save_object("WSLS.rds")
-
+samples$save_object("simmodels/WSLS.rds")
 ```
+
+```{r}
+samples <- readRDS("simmodels/WSLS.rds")
+```
+
+```{r}
+samples$cmdstan_diagnose()
+```
+
+```{r}
+samples$summary() # summarize the model
+```
+
+```{r}
+# Extract posterior samples and include sampling of the prior:
+draws_df <- as_draws_df(samples$draws())
+```
+
+```{r}
+ggplot(draws_df, 
+       aes(.iteration,
+           winprob, 
+           group = .chain, 
+           color = .chain)) +
+  geom_line() +
+  theme_classic()
+```
+
+```{r}
+ggplot(draws_df, 
+       aes(.iteration,
+           lossprob, 
+           group = .chain, 
+           color = .chain)) +
+  geom_line() +
+  theme_classic()
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

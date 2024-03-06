@@ -1,0 +1,2 @@
+"0","# Extract posterior samples and include sampling of the prior:"
+"0","draws_df <- as_draws_df(samples$draws())"

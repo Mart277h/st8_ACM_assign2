@@ -1,0 +1,131 @@
+---
+title: "Assignment2_Martine"
+author: "Martine Lind Jensen"
+date: "2024-02-22"
+output: html_document
+---
+
+```{r Loading libraries}
+pacman::p_load(tidyverse, rstan)
+```
+
+Riccardos code: random agent to let the WSLS model play against 
+```{r random agent from Riccardo to build models against}
+trials <- 120
+rate <- 0.5
+
+# now as a function
+RandomAgent_f <- function(input, rate){
+  n <- length(input)
+  choice <- rbinom(n, 1, rate)
+  return(choice)
+}
+```
+
+Our Win stay loose switch model with probabilistic error to either wins or losses. Such that high win prob means that you are not very likeli to shift when winning. And a low loss probability means that when you loose you are only 70% certain that you are gonna switch. So this is a way of coding the stubborness and on willingness to shift. We are interested in recovering these to parameters, win prob and loose prob.
+
+##Simulating data
+Here we simulate data from our WSLS agent against the random agent. 
+```{r Asym WSLS agent}
+# Building function for asymmetric win stay loose shift agent by including probabilities for winning and loosing
+
+AsymWSLSAgent_f <- function(prevChoice, Feedback, winProb, lossProb){
+  
+  if (Feedback == 1){
+    
+    randomness <- rbinom(1, 1, winProb)
+    # stay with choice agent would initially have made
+    if (randomness == 1){
+      choice = prevChoice 
+    # randomly shift
+    } else if (randomness == 0){
+      choice = 1-prevChoice
+    }
+      
+  } else if (Feedback == 0){
+    
+    randomness <- rbinom(1, 1, lossProb)
+    # stay with choice agent would initially have made
+    if (randomness == 1){
+      choice = 1-prevChoice
+    # randomly shift
+    } else if (randomness == 0){
+      choice = prevChoice
+    }
+  }
+  
+  return(choice)
+}
+
+# empty vectors for agents
+Self <- rep(NA, trials)
+Random <- rep(NA, trials)
+Feedbacklist <- rep(NA, trials)
+
+# other agent's choices
+for (t in seq(trials)){
+  Random[t] <- RandomAgent_f(trials, rate)
+}
+
+# first choice is random...
+Self[1] <- rbinom(1,1,0.5)
+
+# all other choices
+for (t in 2:trials){
+  
+  # get feedback
+  if (Self[t-1] == Random[t-1]){
+    Feedback = 1
+  } else {Feedback = 0}
+  
+  # register feedback
+  Feedbacklist[t] <- Feedback
+  
+  # make decision
+  Self[t] <- AsymWSLSAgent_f(Self[t-1], 
+                         Feedback,
+                         0.9, #Win probability
+                         0.7) #Loose probability
+}
+
+# turn into tibble
+WSLS_df <- tibble(Self,
+             Random,
+             trial = seq(trials),
+             Feedback_prevT = Feedbacklist)
+
+```
+
+##Compiling model in stan 
+This part is not done, just copied from Riccardo so that we know how to compile and run the model. 
+```{r}
+## Specify where the model is
+file <- file.path("WSLS.stan")
+
+# Compile the model
+mod <- cmdstan_model(file, 
+                     # this specifies we can parallelize the gradient estimations on multiple cores
+                     cpp_options = list(stan_threads = TRUE), 
+                     # this is a trick to make it faster
+                     stanc_options = list("O1")) 
+
+# The following command calls Stan with specific options.
+samples <- mod$sample(
+  data = WSLS_df, # the data :-)
+  seed = 123,  # a seed, so I always get the same results
+  chains = 2,  # how many chains should I fit (to check whether they give the same results)
+  parallel_chains = 2, # how many of the chains can be run in parallel?
+  threads_per_chain = 2, # distribute gradient estimations within chain across multiple cores
+  iter_warmup = 1000,  # warmup iterations through which hyperparameters (steps and step length) are adjusted
+  iter_sampling = 2000, # total number of iterations
+  refresh = 0,  # how often to show that iterations have been run
+  output_dir = "simmodels", # saves the samples as csv so it can be later loaded
+  max_treedepth = 20, # how many steps in the future to check to avoid u-turns
+  adapt_delta = 0.99, # how high a learning rate to adjust hyperparameters during warmup
+)
+
+# Save the fitted model
+samples$save_object("WSLS.rds")
+
+```
+

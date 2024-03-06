@@ -1,0 +1,6 @@
+"0","## Create the data. N.B. note the two variables have different lengths: 1 for n, n for h."
+"0","data <- list("
+"0","  trials = 120, # 'trials' in data section of stan model"
+"0","  choices = WSLS_df$Self, # 'choices' in data section of stan model"
+"0","  feedback = WSLS_df$feedback # 'feedback' in data section of stan model"
+"0",")"
