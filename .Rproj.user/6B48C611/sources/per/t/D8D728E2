@@ -1,0 +1,26 @@
+{
+    "id": "D8D728E2",
+    "path": "~/GitHub/Class_16_02/StanningRL.stan",
+    "project_path": null,
+    "type": "stan",
+    "hash": "3917985972",
+    "contents": "",
+    "dirty": false,
+    "created": 1709294192852.0,
+    "source_on_save": false,
+    "relative_order": 4,
+    "properties": {
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "32,17",
+        "scrollLine": "22"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1708088134,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1708088134,
+    "read_only": false,
+    "read_only_alternatives": []
+}
