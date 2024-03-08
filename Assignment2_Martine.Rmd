@@ -196,14 +196,54 @@ ggplot(draws_df) +
 
 
 ```{r}
+#In logodds space
+ggplot(draws_df) +
+  geom_density(aes(lossprob), fill = "blue", alpha = 0.3) +
+  geom_density(aes(lossprob_prior), fill = "red", alpha = 0.3) +
+  xlab("LossProb") +
+  ylab("Posterior Density") +
+  theme_classic()
+
 ggplot(draws_df) +
   geom_density(aes(winprob), fill = "blue", alpha = 0.3) +
   geom_density(aes(winprob_prior), fill = "red", alpha = 0.3) +
-  geom_vline(xintercept = 0, size = 2) +
-  xlab("Bias") +
+  xlab("WinProb") +
+  ylab("Posterior Density") +
+  theme_classic()
+
+#Plotting in probability scale 
+ggplot(draws_df) +
+  geom_density(aes(inv_logit_scaled(winprob)), fill = "blue", alpha = 0.3) +
+  geom_density(aes(inv_logit_scaled(winprob_prior)), fill = "red", alpha = 0.3) +
+  geom_vline(xintercept = 0.9, size = 2) + #true value from our simulation
+  xlab("WinProb") +
+  ylab("Posterior Density") +
+  theme_classic()
+
+
+ggplot(draws_df) +
+  geom_density(aes(inv_logit_scaled(lossprob)), fill = "blue", alpha = 0.3) +
+  geom_density(aes(inv_logit_scaled(lossprob_prior)), fill = "red", alpha = 0.3) +
+  geom_vline(xintercept = 0.7, size = 2) + #true value from our simulation
+  xlab("LossProb") +
   ylab("Posterior Density") +
   theme_classic()
 ```
+
+Parameter recovery 
+```{r}
+#To use riccardos code we need a tibble that takes values of winprob and lossprob from 0-1 with 0.1 increment, but having unique values from each 
+temp <- tibble(unique(d[,c("rate", "noise")])) %>% 
+  mutate(seed = 1000, trials = 120) %>%
+  rename(rateLvl = rate, noiseLvl = noise)
+
+winprob <- seq(0,1, by = 0.1)
+lossprob <- seq(0,1, by = 0.1)
+
+temp1 <- tibble(unique(d[,c("winprob", "lossprob")])) %>% 
+  mutate(seed = 1000, trials = 120) 
+```
+
 
 
 
