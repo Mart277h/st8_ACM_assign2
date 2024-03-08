@@ -4,7 +4,7 @@
 
 data {
   int<lower=1> trials; //trials - defines length of following data
-  array[trials] int choices; //array of choices made by the agent
+  array[trials] int <lower=1> choices; //array of choices made by the agent
   vector[trials] feedback; //feedback from previous choices
 }
 
@@ -55,8 +55,8 @@ generated quantities{
   real lossprob_prior;
   real winprob_posterior; 
   real lossprob_posterior;
-  int<lower=0, upper=trials> prior_preds; // creating the prior predictd choices
-  int<lower=0, upper=trials> post_preds;
+  array[trials] int<lower=1, upper=trials> prior_preds; // creating the prior predictd choices
+  array[trials] int<lower=1, upper=trials> post_preds;
   
   winprob_prior = inv_logit(normal_rng(0,1)); // specifying the priors
   lossprob_prior = inv_logit(normal_rng(0,1));
