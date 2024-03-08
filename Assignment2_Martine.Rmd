@@ -188,13 +188,22 @@ ggplot(draws_df,
 
 ```{r}
 ggplot(draws_df) +
-  geom_histogram(aes(prior_preds), color = "darkblue", fill = "blue", alpha = 0.3) +
+  geom_histogram(aes("prior_preds[1]"), color = "darkblue", fill = "blue", alpha = 0.3) +
   xlab("Predicted heads out of 120 trials") +
   ylab("Posterior Density") +
   theme_classic()
 ```
 
 
+```{r}
+ggplot(draws_df) +
+  geom_density(aes(winprob), fill = "blue", alpha = 0.3) +
+  geom_density(aes(winprob_prior), fill = "red", alpha = 0.3) +
+  geom_vline(xintercept = 0, size = 2) +
+  xlab("Bias") +
+  ylab("Posterior Density") +
+  theme_classic()
+```
 
 
 

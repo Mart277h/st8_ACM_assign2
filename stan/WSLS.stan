@@ -4,7 +4,7 @@
 
 data {
   int<lower=1> trials; //trials - defines length of following data
-  array[trials] int <lower=1> choices; //array of choices made by the agent
+  array[trials] int <lower=0> choices; //array of choices made by the agent
   vector[trials] feedback; //feedback from previous choices
 }
 
@@ -53,13 +53,18 @@ model {
 generated quantities{
   real winprob_prior; //creating the prior parameters
   real lossprob_prior;
-  real winprob_posterior; 
-  real lossprob_posterior;
-  array[trials] int<lower=1, upper=trials> prior_preds; // creating the prior predictd choices
-  array[trials] int<lower=1, upper=trials> post_preds;
+  array[trials] int prior_preds; // creating the prior predicted choices
+  array[trials] int post_preds;
+  
+  int<lower=0, upper= trials> prior_preds_wp1_l0;
+  
   
   winprob_prior = inv_logit(normal_rng(0,1)); // specifying the priors
   lossprob_prior = inv_logit(normal_rng(0,1));
-  prior_preds = binomial_rng(trials, inv_logit(1 + winprob_prior * winhand + lossprob_prior * losshand));
-  post_preds = binomial_rng(trials, inv_logit(1 + winprob * winhand + lossprob * losshand));
+  
+  
+  prior_preds_wp1_l0 = binomial_rng(1, inv_logit(1 + winprob_prior * 1 + lossprob_prior * 0));
+  
+  prior_preds = bernoulli_rng(inv_logit(1 + winprob_prior * winhand + lossprob_prior * losshand));
+  post_preds = bernoulli_rng(inv_logit(1 + winprob * winhand + lossprob * losshand));
 }
