@@ -117,7 +117,7 @@ data <- list(
 )
 ```
 
-##Compiling model in stan 
+#Compiling model in stan 
 This part is not done, just copied from Riccardo so that we know how to compile and run the model. 
 ```{r}
 ## Specify where the model is
@@ -166,6 +166,7 @@ samples$summary() # summarize the model
 draws_df <- as_draws_df(samples$draws())
 ```
 
+#Plots 
 ```{r}
 ggplot(draws_df, 
        aes(.iteration,
@@ -230,21 +231,111 @@ ggplot(draws_df) +
   theme_classic()
 ```
 
-Parameter recovery 
+#Parameter recovery 
+Parameter recovery setup for all values of winprob and lossprob between 0-1, with 0.1 increment. 
 ```{r}
-#To use riccardos code we need a tibble that takes values of winprob and lossprob from 0-1 with 0.1 increment, but having unique values from each 
-temp <- tibble(unique(d[,c("rate", "noise")])) %>% 
-  mutate(seed = 1000, trials = 120) %>%
-  rename(rateLvl = rate, noiseLvl = noise)
+#Setting up parallelization 
+plan(multisession, workers = 4)
 
-winprob <- seq(0,1, by = 0.1)
-lossprob <- seq(0,1, by = 0.1)
+#Our parameter recovery contains recovery of winprob and lossprob by different random agent biases.
 
-temp1 <- tibble(unique(d[,c("winprob", "lossprob")])) %>% 
-  mutate(seed = 1000, trials = 120) 
+parameter_recovery <- function(seed, trials, winprob, lossprob, random_agent_bias) { 
+  
+    #Empty vectors for agents
+    Self <- rep(NA, trials)
+    Random <- rep(NA, trials)
+    Feedbacklist <- rep(NA, trials)
+    
+    #Other agent's choices
+    for (t in seq(trials)){
+      Random[t] <- RandomAgent_f(trials, random_agent_bias)
+    }
+    
+    #First choice is random
+    Self[1] <- rbinom(1,1,0.5)
+    
+    #All other choices
+    for (t in 2:trials){
+      
+      #Get feedback
+      if (Self[t-1] == Random[t-1]){
+        Feedback = 1
+      } else {Feedback = 0}
+      
+      #Register feedback
+      Feedbacklist[t-1] <- Feedback
+      
+      #Make decision
+      Self[t] <- AsymWSLSAgent_f(Self[t-1], Feedback, winprob, lossprob) 
+    }
+    
+    if (Self[120] == Random[120]){
+        Feedbacklist[120] = 1
+      } else {Feedbacklist[120] = 0}
+    
+    # turn into tibble
+    temp <- tibble(Self,
+                 Random,
+                 trial = seq(trials),
+                 feedback = Feedbacklist)
+    
+    #Data structure needed for implementing in the stan models 
+    data <- list(
+      trials = 120, 
+      choices = temp$Self, 
+      feedback = temp$feedback 
+    )
+    
+    samples <- mod$sample(
+      data = data,
+      seed = 1000,
+      chains = 1,
+      parallel_chains = 1,
+      threads_per_chain = 1,
+      iter_warmup = 1000,
+      iter_sampling = 2000,
+      refresh = 0,
+      max_treedepth = 20,
+      adapt_delta = 0.99,
+    )
+    
+    #Settting up datafram with as_draws
+    draws_df <- as_draws_df(samples$draws())
+    
+    #Saving the variables we need to plot parameter recovery in temporary form to be returned
+    temp <- tibble(winprobEst = inv_logit_scaled(draws_df$winprob),
+                   lossprobEst = inv_logit_scaled(draws_df$lossprob),
+                   winprobTrue = winprob, 
+                   lossprobTrue = lossprob, 
+                   random_agent_bias = random_agent_bias)
+    
+    return(temp)
+  
+}
+
+#Setting up our variables for parameter recovery
+sim_variables <- expand_grid(
+  winprob = seq(0, 1, by = 0.1), 
+  lossprob = seq(0, 1, by = 0.1), 
+  r_a_b = seq(0, 0.5, by = 0.1)) %>% 
+  mutate(
+    seed = 1234, 
+    trials = 120) 
+
+#Doing fancy stuff with a fancy function to recover parameters 
+recovery_df <- future_pmap_dfr(sim_variables, parameter_recovery, .options = furrr_options(seed = TRUE))
+
+#Saving the dataframe
+#write_csv(recovery_df, "recovery_try.csv")
 ```
 
-
+```{r}
+ggplot(recovery_df, aes(winprobTrue, winprobEst)) +
+  geom_point(alpha = 0.1) +
+  geom_smooth() +
+  facet_wrap(.~random_agent_bias) +
+  theme_classic()
+```
 
 
 
