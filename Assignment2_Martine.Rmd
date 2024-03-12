@@ -96,6 +96,7 @@ for (t in 2:trials){
                          0.7) #Loose probability
 }
 
+#Cleaning data to fit stan
 if (Self[120] == Random[120]){
     Feedbacklist[120] = 1
   } else {Feedbacklist[120] = 0}
@@ -109,31 +110,30 @@ WSLS_df <- tibble(Self,
 ```
 
 ```{r}
-## Create the data. N.B. note the two variables have different lengths: 1 for n, n for h.
+##Create the data
 data <- list(
-  trials = 120, # 'trials' in data section of stan model
-  choices = WSLS_df$Self, # 'choices' in data section of stan model
-  feedback = WSLS_df$feedback # 'feedback' in data section of stan model
+  trials = 120, 
+  choices = WSLS_df$Self, 
+  feedback = WSLS_df$feedback 
 )
 ```
 
 #Compiling model in stan 
-This part is not done, just copied from Riccardo so that we know how to compile and run the model. 
-```{r}
-## Specify where the model is
+ 
+```{r compiling and running the model}
+# file path to model 
 file <- file.path("stan/WSLS.stan")
 
-# Compile the model
+# compiling the model (Riccardos way)
 mod <- cmdstan_model(file, 
-                     # this specifies we can parallelize the gradient estimations on multiple cores
-                     cpp_options = list(stan_threads = TRUE), 
+                     cpp_options = list(stan_threads = TRUE), # this specifies we can parallelize the gradient estimations on multiple cores
                      # this is a trick to make it faster
                      stanc_options = list("O1")) 
 
-# The following command calls Stan with specific options.
+#Running the model
 samples <- mod$sample(
-  data = data, # the data :-)
-  seed = 123,  # a seed, so I always get the same results
+  data = data, # data
+  seed = 123, 
   chains = 2,  # how many chains should I fit (to check whether they give the same results)
   parallel_chains = 2, # how many of the chains can be run in parallel?
   threads_per_chain = 2, # distribute gradient estimations within chain across multiple cores
@@ -150,24 +150,24 @@ samples$save_object("simmodels/WSLS.rds")
 ```
 
 ```{r}
+#Reading the model with the RDS
 samples <- readRDS("simmodels/WSLS.rds")
-```
 
-```{r}
-samples$cmdstan_diagnose()
-```
+samples$cmdstan_diagnose() #function checking the chains and stuff
 
-```{r}
 samples$summary() # summarize the model
-```
 
-```{r}
 # Extract posterior samples and include sampling of the prior:
-draws_df <- as_draws_df(samples$draws())
+draws_df <- as_draws_df(samples$draws()) #as_draws is a fancy way of putting the data such that we can manipulate it easier
 ```
 
 #Plots 
-```{r}
+1. chain plots 
+2. prior predictive check 
+3. posterior predictive check 
+4. prior posterior update checks 
+
+```{r chain plots}
 ggplot(draws_df, 
        aes(.iteration,
            winprob, 
@@ -175,9 +175,7 @@ ggplot(draws_df,
            color = .chain)) +
   geom_line() +
   theme_classic()
-```
 
-```{r}
 ggplot(draws_df, 
        aes(.iteration,
            lossprob, 
@@ -187,16 +185,60 @@ ggplot(draws_df,
   theme_classic()
 ```
 
-```{r}
+```{r prior predictive choice}
 ggplot(draws_df) +
-  geom_histogram(aes("prior_preds[1]"), color = "darkblue", fill = "blue", alpha = 0.3) +
+  geom_histogram(aes(prior_preds_wp1_l0), color = "darkblue", fill = "blue", alpha = 0.3) +
+  xlab("Predicted heads out of 120 trials") +
+  ylab("Posterior Density") +
+  theme_classic()
+
+ggplot(draws_df) +
+  geom_histogram(aes(prior_preds_wp0_l0), color = "darkblue", fill = "blue", alpha = 0.3) +
+  xlab("Predicted heads out of 120 trials") +
+  ylab("Posterior Density") +
+  theme_classic()
+
+ggplot(draws_df) +
+  geom_histogram(aes(prior_preds_w0_lp1), color = "darkblue", fill = "blue", alpha = 0.3) +
+  xlab("Predicted heads out of 120 trials") +
+  ylab("Posterior Density") +
+  theme_classic()
+
+ggplot(draws_df) +
+  geom_histogram(aes(prior_preds_w0_lp0), color = "darkblue", fill = "blue", alpha = 0.3) +
   xlab("Predicted heads out of 120 trials") +
   ylab("Posterior Density") +
   theme_classic()
 ```
 
+```{r posterior predictive choice}
+ggplot(draws_df) +
+  geom_histogram(aes(post_preds_wp1_l0), color = "darkblue", fill = "blue", alpha = 0.3) +
+  xlab("Predicted heads out of 120 trials") +
+  ylab("Posterior Density") +
+  theme_classic()
 
-```{r}
+ggplot(draws_df) +
+  geom_histogram(aes(post_preds_wp0_l0), color = "darkblue", fill = "blue", alpha = 0.3) +
+  xlab("Predicted heads out of 120 trials") +
+  ylab("Posterior Density") +
+  theme_classic()
+
+ggplot(draws_df) +
+  geom_histogram(aes(post_preds_w0_lp1), color = "darkblue", fill = "blue", alpha = 0.3) +
+  xlab("Predicted heads out of 120 trials") +
+  ylab("Posterior Density") +
+  theme_classic()
+
+ggplot(draws_df) +
+  geom_histogram(aes(post_preds_w0_lp0), color = "darkblue", fill = "blue", alpha = 0.3) +
+  xlab("Predicted heads out of 120 trials") +
+  ylab("Posterior Density") +
+  theme_classic()
+
+```
+
+```{r prior posterior update checks}
 #In logodds space
 ggplot(draws_df) +
   geom_density(aes(lossprob), fill = "blue", alpha = 0.3) +
@@ -239,7 +281,7 @@ plan(multisession, workers = 4)
 
 #Our parameter recovery contains recovery of winprob and lossprob by different random agent biases.
 
-parameter_recovery <- function(seed, trials, winprob, lossprob, random_agent_bias) { 
+parameter_recovery <- function(seed, trials, winprob, lossprob, r_a_b) { 
   
     #Empty vectors for agents
     Self <- rep(NA, trials)
@@ -248,7 +290,7 @@ parameter_recovery <- function(seed, trials, winprob, lossprob, random_agent_bia
     
     #Other agent's choices
     for (t in seq(trials)){
-      Random[t] <- RandomAgent_f(trials, random_agent_bias)
+      Random[t] <- RandomAgent_f(trials, r_a_b)
     }
     
     #First choice is random
@@ -307,7 +349,7 @@ parameter_recovery <- function(seed, trials, winprob, lossprob, random_agent_bia
                    lossprobEst = inv_logit_scaled(draws_df$lossprob),
                    winprobTrue = winprob, 
                    lossprobTrue = lossprob, 
-                   random_agent_bias = random_agent_bias)
+                   r_a_b = r_a_b)
     
     return(temp)
   
@@ -317,7 +359,7 @@ parameter_recovery <- function(seed, trials, winprob, lossprob, random_agent_bia
 sim_variables <- expand_grid(
   winprob = seq(0, 1, by = 0.1), 
   lossprob = seq(0, 1, by = 0.1), 
-  r_a_b = seq(0, 0.5, by = 0.1)) %>% 
+  r_a_b = seq(0.1, 0.5, by = 0.1)) %>% 
   mutate(
     seed = 1234, 
     trials = 120) 
@@ -326,14 +368,14 @@ sim_variables <- expand_grid(
 recovery_df <- future_pmap_dfr(sim_variables, parameter_recovery, .options = furrr_options(seed = TRUE))
 
 #Saving the dataframe
-#write_csv(recovery_df, "recovery_try.csv")
+write_csv(recovery_df, "recovery_try.csv")
 ```
 
-```{r}
-ggplot(recovery_df, aes(winprobTrue, winprobEst)) +
+```{r plotting parameter recovery}
+recover_plot <- ggplot(recovery_df, aes(winprobTrue, winprobEst)) +
   geom_point(alpha = 0.1) +
   geom_smooth() +
-  facet_wrap(.~random_agent_bias) +
+  facet_wrap(.~r_a_b) +
   theme_classic()
 ```
 

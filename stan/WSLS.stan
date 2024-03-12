@@ -62,18 +62,32 @@ model {
 generated quantities{
   real winprob_prior; //creating the prior parameters
   real lossprob_prior;
-  array[trials] int prior_preds; // creating the prior predicted choices
-  array[trials] int post_preds;
   
-  int<lower=0, upper= trials> prior_preds_wp1_l0;
+  //Prior predictive parameters
+  int <lower=0, upper= trials> prior_preds_wp1_l0; //win on right hand
+  int <lower=0, upper= trials> prior_preds_wp0_l0; // win on left hand
+  int <lower=0, upper= trials> prior_preds_w0_lp1; // loss on right hand
+  int <lower=0, upper= trials> prior_preds_w0_lp0; // loss on left hand
   
+  //Posterior predictive parameters
+  int <lower=0, upper= trials> post_preds_wp1_l0; //win on right hand
+  int <lower=0, upper= trials> post_preds_wp0_l0; // win on left hand
+  int <lower=0, upper= trials> post_preds_w0_lp1; // loss on right hand
+  int <lower=0, upper= trials> post_preds_w0_lp0; // loss on left hand
   
+  //Setting the priors
   winprob_prior = normal_rng(0,1); // specifying the priors
   lossprob_prior = normal_rng(0,1);
   
-  
+  //Using binomial random number generater and inverse logit scale it such that we go to probability scale when choosing
   prior_preds_wp1_l0 = binomial_rng(trials, inv_logit(winprob_prior * 1 + lossprob_prior * 0));
+  prior_preds_wp0_l0 = binomial_rng(trials, inv_logit(winprob_prior * -1 + lossprob_prior * 0));
+  prior_preds_w0_lp1 = binomial_rng(trials, inv_logit(winprob_prior * 0 + lossprob_prior * 1));
+  prior_preds_w0_lp0 = binomial_rng(trials, inv_logit(winprob_prior * 0 + lossprob_prior * -1));
   
-  prior_preds = bernoulli_rng(inv_logit(winprob_prior * winhand + lossprob_prior * losshand));
-  post_preds = bernoulli_rng(inv_logit(winprob * winhand + lossprob * losshand));
+  post_preds_wp1_l0 = binomial_rng(trials, inv_logit(winprob * 1 + lossprob * 0));
+  post_preds_wp0_l0 = binomial_rng(trials, inv_logit(winprob * -1 + lossprob * 0));
+  post_preds_w0_lp1 = binomial_rng(trials, inv_logit(winprob * 0 + lossprob * 1));
+  post_preds_w0_lp0 = binomial_rng(trials, inv_logit(winprob * 0 + lossprob * -1));
+  
 }
