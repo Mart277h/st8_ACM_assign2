@@ -83,11 +83,12 @@ Self[1] <- rbinom(1,1,0.5)
 # all other choices
 for (t in 2:trials){
   
-  # get feedback
+  #Get feedback
   if (Self[t-1] == Random[t-1]){
     Feedback = 1
-  } else {Feedback = 0}
-  
+    } else {Feedback = 0}
+      
+
   # register feedback
   Feedbacklist[t-1] <- Feedback
   
@@ -96,6 +97,8 @@ for (t in 2:trials){
                          Feedback,
                          0.9, #Win probability
                          0.7) #Loose probability
+  
+
 }
 
 #Cleaning data to fit stan
@@ -399,9 +402,11 @@ parameter_recovery <- function(seed, trials, winprob, lossprob, r_a_b) {
       Self[t] <- AsymWSLSAgent_f(Self[t-1], Feedback, winprob, lossprob) 
     }
     
-    if (Self[120] == Random[120]){
-        Feedbacklist[120] = 1
-      } else {Feedbacklist[120] = 0}
+    trials_n <- max(trials)
+      
+    if (Self[trials_n] == Random[trials_n]){
+        Feedbacklist[trials_n] = 1
+      } else {Feedbacklist[trials_n] = 0}
     
     # turn into tibble
     temp <- tibble(Self,
@@ -411,7 +416,7 @@ parameter_recovery <- function(seed, trials, winprob, lossprob, r_a_b) {
     
     #Data structure needed for implementing in the stan models 
     data <- list(
-      trials = 120, 
+      trials = trials, 
       choices = temp$Self, 
       feedback = temp$feedback 
     )
@@ -437,7 +442,8 @@ parameter_recovery <- function(seed, trials, winprob, lossprob, r_a_b) {
                    lossprobEst = inv_logit_scaled(draws_df$lossprob),
                    winprobTrue = winprob, 
                    lossprobTrue = lossprob, 
-                   r_a_b = r_a_b)
+                   r_a_b = r_a_b, 
+                   trials = trials)
     
     return(temp)
   
@@ -447,29 +453,42 @@ parameter_recovery <- function(seed, trials, winprob, lossprob, r_a_b) {
 sim_variables <- expand_grid(
   winprob = seq(0, 1, by = 0.1), 
   lossprob = seq(0, 1, by = 0.1), 
-  r_a_b = seq(0.1, 0.5, by = 0.1)) %>% 
+  trials = c(50, 120, 200)
+  #r_a_b = seq(0.1, 0.5, by = 0.1)
+  ) %>% 
   mutate(
     seed = 1234, 
-    trials = 120) 
+    #trials = 120, 
+    r_a_b = 0.5) 
 
 #Doing fancy stuff with a fancy function to recover parameters 
-recovery_df <- future_pmap_dfr(sim_variables, parameter_recovery, .options = furrr_options(seed = TRUE))
+recovery_df_trials <- future_pmap_dfr(sim_variables, parameter_recovery, .options = furrr_options(seed = TRUE))
 
 #Saving the dataframe
-write_csv(recovery_df, "recovery_try.csv")
+write_csv(recovery_df_trials, "recovery_trials.csv")
 ```
 
 ```{r plotting parameter recovery}
-recover_plot <- ggplot(recovery_df, aes(winprobTrue, winprobEst)) +
-  geom_point(alpha = 0.1) +
-  geom_smooth() +
-  facet_wrap(.~r_a_b) +
+recover_plot_trials <- ggplot(recovery_df_trials, aes(winprobTrue, winprobEst)) +
+  geom_point(alpha = 0.1, color = "darkolivegreen3") +
+  geom_abline(intercept=0, slope=1, linetype=2) +
+  geom_smooth(color = "darkolivegreen") +
+  facet_wrap(.~trials) +
+  theme_classic()
+
+recover_plot_trials_loss <- ggplot(recovery_df_trials, aes(lossprobTrue, lossprobEst)) +
+  geom_point(alpha = 0.1, color = "darkolivegreen3") +
+  geom_abline(intercept=0, slope=1, linetype=2) +
+  geom_smooth(color = "darkolivegreen") +
+  facet_wrap(.~trials) +
   theme_classic()
 ```
 
 
 ```{r}
 recover_plot
+recover_plot_trials
+recover_plot_trials_loss
 ```
 
 
