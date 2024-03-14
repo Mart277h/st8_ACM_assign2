@@ -14,7 +14,9 @@ pacman::p_load(tidyverse,
         tidybayes,
         future, 
         purrr, 
-        furrr)
+        furrr,
+        ggplot2,
+        gridExtra)
 ```
 
 Riccardos code: random agent to let the WSLS model play against 
@@ -186,91 +188,177 @@ ggplot(draws_df,
 ```
 
 ```{r prior predictive choice}
-ggplot(draws_df) +
+prior_pred_1 <- ggplot(draws_df) +
   geom_histogram(aes(prior_preds_wp1_l0), color = "darkblue", fill = "blue", alpha = 0.3) +
-  xlab("Predicted heads out of 120 trials") +
-  ylab("Posterior Density") +
-  theme_classic()
+  labs(title = "Prior predictions for when agent won with heads",
+       x = "Predicted heads out of 120 trials",
+       y = "Posterior Density") +
+  theme_classic() +
+  theme(plot.title = element_text(size = 13),
+        axis.title.x = element_text(size = 11),
+        axis.title.y = element_text(size = 11))
 
-ggplot(draws_df) +
+prior_pred_2 <- ggplot(draws_df) +
   geom_histogram(aes(prior_preds_wp0_l0), color = "darkblue", fill = "blue", alpha = 0.3) +
-  xlab("Predicted heads out of 120 trials") +
-  ylab("Posterior Density") +
-  theme_classic()
+  labs(title = "Prior predictions for when agent won with tails",
+       x = "Predicted heads out of 120 trials",
+       y = "Posterior Density") +
+  theme_classic() +
+  theme(plot.title = element_text(size = 13),
+        axis.title.x = element_text(size = 11),
+        axis.title.y = element_text(size = 11))
 
-ggplot(draws_df) +
+prior_pred_3 <- ggplot(draws_df) +
   geom_histogram(aes(prior_preds_w0_lp1), color = "darkblue", fill = "blue", alpha = 0.3) +
-  xlab("Predicted heads out of 120 trials") +
-  ylab("Posterior Density") +
-  theme_classic()
+  labs(title = "Prior predictions for when agent lost with heads",
+       x = "Predicted heads out of 120 trials",
+       y = "Posterior Density") +
+  theme_classic() +
+  theme(plot.title = element_text(size = 13),
+        axis.title.x = element_text(size = 11),
+        axis.title.y = element_text(size = 11))
 
-ggplot(draws_df) +
+prior_pred_4 <- ggplot(draws_df) +
   geom_histogram(aes(prior_preds_w0_lp0), color = "darkblue", fill = "blue", alpha = 0.3) +
-  xlab("Predicted heads out of 120 trials") +
-  ylab("Posterior Density") +
-  theme_classic()
+  labs(title = "Prior predictions for when agent lost with tails",
+       x = "Predicted heads out of 120 trials",
+       y = "Posterior Density") +
+  theme_classic() +
+  theme(plot.title = element_text(size = 13),
+        axis.title.x = element_text(size = 11),
+        axis.title.y = element_text(size = 11))
+
+prior_pred_plot <- grid.arrange(prior_pred_1, 
+             prior_pred_2, 
+             prior_pred_3, 
+             prior_pred_4, 
+             ncol = 2)
+
+ggsave("plots/prior_pred_plot.png", 
+       prior_pred_plot,
+       width = 10,
+       height = 7)
 ```
 
 ```{r posterior predictive choice}
-ggplot(draws_df) +
+post_pred_1 <- ggplot(draws_df) +
   geom_histogram(aes(post_preds_wp1_l0), color = "darkblue", fill = "blue", alpha = 0.3) +
-  xlab("Predicted heads out of 120 trials") +
-  ylab("Posterior Density") +
-  theme_classic()
+  labs(title = "Posterior predictions for when agent won with heads",
+       x = "Predicted heads out of 120 trials",
+       y = "Posterior Density") +
+  theme_classic() +
+  theme(plot.title = element_text(size = 13),
+        axis.title.x = element_text(size = 11),
+        axis.title.y = element_text(size = 11))
 
-ggplot(draws_df) +
+post_pred_2 <- ggplot(draws_df) +
   geom_histogram(aes(post_preds_wp0_l0), color = "darkblue", fill = "blue", alpha = 0.3) +
-  xlab("Predicted heads out of 120 trials") +
-  ylab("Posterior Density") +
-  theme_classic()
+  labs(title = "Posterior predictions for when agent won with tails",
+       x = "Predicted heads out of 120 trials",
+       y = "Posterior Density") +
+  theme_classic() +
+  theme(plot.title = element_text(size = 13),
+        axis.title.x = element_text(size = 11),
+        axis.title.y = element_text(size = 11))
 
-ggplot(draws_df) +
+post_pred_3 <- ggplot(draws_df) +
   geom_histogram(aes(post_preds_w0_lp1), color = "darkblue", fill = "blue", alpha = 0.3) +
-  xlab("Predicted heads out of 120 trials") +
-  ylab("Posterior Density") +
-  theme_classic()
+  labs(title = "Posterior predictions for when agent lost with heads",
+       x = "Predicted heads out of 120 trials",
+       y = "Posterior Density") +
+  theme_classic() +
+  theme(plot.title = element_text(size = 13),
+        axis.title.x = element_text(size = 11),
+        axis.title.y = element_text(size = 11))
 
-ggplot(draws_df) +
+post_pred_4 <- ggplot(draws_df) +
   geom_histogram(aes(post_preds_w0_lp0), color = "darkblue", fill = "blue", alpha = 0.3) +
-  xlab("Predicted heads out of 120 trials") +
-  ylab("Posterior Density") +
-  theme_classic()
+  labs(title = "Posterior predictions for when agent lost with tails",
+       x = "Predicted heads out of 120 trials",
+       y = "Posterior Density") +
+  theme_classic() +
+  theme(plot.title = element_text(size = 13),
+        axis.title.x = element_text(size = 11),
+        axis.title.y = element_text(size = 11))
 
+post_pred_plot <- grid.arrange(post_pred_1, 
+             post_pred_2, 
+             post_pred_3, 
+             post_pred_4, 
+             ncol = 2)
+
+ggsave("plots/post_pred_plot.png", 
+       post_pred_plot,
+       width = 10,
+       height = 7)
 ```
 
 ```{r prior posterior update checks}
 #In logodds space
-ggplot(draws_df) +
-  geom_density(aes(lossprob), fill = "blue", alpha = 0.3) +
-  geom_density(aes(lossprob_prior), fill = "red", alpha = 0.3) +
-  xlab("LossProb") +
-  ylab("Posterior Density") +
-  theme_classic()
-
-ggplot(draws_df) +
+ppu_log_1 <- ggplot(draws_df) +
   geom_density(aes(winprob), fill = "blue", alpha = 0.3) +
   geom_density(aes(winprob_prior), fill = "red", alpha = 0.3) +
-  xlab("WinProb") +
-  ylab("Posterior Density") +
-  theme_classic()
+  labs(title = "Prior and posterior distributions for WinProb in log-odds space",
+       x = "WinProb",
+       y = "Posterior Density") +
+  theme_classic() +
+  theme(plot.title = element_text(size = 11),
+        axis.title.x = element_text(size = 9),
+        axis.title.y = element_text(size = 9))
+
+ppu_log_2 <- ggplot(draws_df) +
+  geom_density(aes(lossprob), fill = "blue", alpha = 0.3) +
+  geom_density(aes(lossprob_prior), fill = "red", alpha = 0.3) +
+  labs(title = "Prior and posterior distributions for LossProb in log-odds space",
+       x = "LossProb",
+       y = "Posterior Density") +
+  theme_classic() +
+  theme(plot.title = element_text(size = 11),
+        axis.title.x = element_text(size = 9),
+        axis.title.y = element_text(size = 9))
 
 #Plotting in probability scale 
-ggplot(draws_df) +
+ppu_p_1 <- ggplot(draws_df) +
   geom_density(aes(inv_logit_scaled(winprob)), fill = "blue", alpha = 0.3) +
   geom_density(aes(inv_logit_scaled(winprob_prior)), fill = "red", alpha = 0.3) +
   geom_vline(xintercept = 0.9, size = 2) + #true value from our simulation
-  xlab("WinProb") +
-  ylab("Posterior Density") +
-  theme_classic()
+  labs(title = "Prior and posterior distributions for WinProb in probability space",
+       x = "WinProb",
+       y = "Posterior Density") +
+  theme_classic() +
+  theme(plot.title = element_text(size = 11),
+        axis.title.x = element_text(size = 9),
+        axis.title.y = element_text(size = 9))
 
-
-ggplot(draws_df) +
+ppu_p_2 <- ggplot(draws_df) +
   geom_density(aes(inv_logit_scaled(lossprob)), fill = "blue", alpha = 0.3) +
   geom_density(aes(inv_logit_scaled(lossprob_prior)), fill = "red", alpha = 0.3) +
   geom_vline(xintercept = 0.7, size = 2) + #true value from our simulation
-  xlab("LossProb") +
-  ylab("Posterior Density") +
-  theme_classic()
+  labs(title = "Prior and posterior distributions for LossProb in probability space",
+       x = "LossProb",
+       y = "Posterior Density") +
+  theme_classic() +
+  theme(plot.title = element_text(size = 11),
+        axis.title.x = element_text(size = 9),
+        axis.title.y = element_text(size = 9))
+
+ppu_log_plot <- grid.arrange(ppu_log_1,
+                             ppu_log_2,
+                             ncol = 2)
+
+ppu_p_plot <- grid.arrange(ppu_p_1,
+                           ppu_p_2,
+                           ncol = 2)
+
+ggsave("plots/ppu_log_plot.png", 
+       ppu_log_plot,
+       width = 10,
+       height = 4)
+
+ggsave("plots/ppu_p_plot.png", 
+       ppu_p_plot,
+       width = 10,
+       height = 4)
 ```
 
 #Parameter recovery 
