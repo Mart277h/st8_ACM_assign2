@@ -380,6 +380,9 @@ recover_plot <- ggplot(recovery_df, aes(winprobTrue, winprobEst)) +
 ```
 
 
+```{r}
+recover_plot
+```
 
 
 
